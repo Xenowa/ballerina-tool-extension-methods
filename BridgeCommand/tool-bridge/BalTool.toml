@@ -1,0 +1,5 @@
+[tool]
+id = “bridge” # need to be same as picocli name in java file
+
+[[dependency]]
+path = "../build/libs/BridgeCommand-1.0.jar"

@@ -1,0 +1,4 @@
+rootProject.name = 'ballerina-tool-extension-methods'
+include 'CustomCompilerPlugin'
+include 'BridgeCommand'
+
