@@ -9,21 +9,21 @@ import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import io.ballerina.projects.Document;
 import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleCompilation;
+import io.ballerina.projects.PackageCompilation;
 import io.ballerina.projects.Project;
 import io.ballerina.projects.directory.ProjectLoader;
 import io.ballerina.projects.util.ProjectConstants;
+import io.ballerina.tools.diagnostics.DiagnosticProperty;
+import io.ballerina.tools.diagnostics.DiagnosticPropertyKind;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
 
 @CommandLine.Command(name = "bridge", description = "Link with compiler plugins")
 public class BridgeCommand implements BLauncherCmd {
@@ -132,9 +132,7 @@ public class BridgeCommand implements BLauncherCmd {
                 SensorContext context = new SensorContext(issues,
                         documentPath != null ? documentPath.toString() : null,
                         moduleName,
-                        documentName,
-                        syntaxTree,
-                        semanticModel);
+                        documentName);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
                 context.reportIssue(0,
@@ -145,16 +143,63 @@ public class BridgeCommand implements BLauncherCmd {
                         "Local issue",
                         "INTERNAL_CHECK_VIOLATION");
 
-                // Load Tool plugins
-                URLClassLoader ucl = getUrlClassLoader();
+                // Perform custom scans
+                if (module.isDefaultModule()) {
+                    PackageCompilation packageCompilation = project.currentPackage().getCompilation();
 
-                // Read common interface implementations
-                ServiceLoader<CustomScanner> customScanners = ServiceLoader.load(CustomScanner.class, ucl);
+                    // Iterate through received diagnostics and add reported issues
+                    packageCompilation.diagnosticResult().diagnostics().forEach(diagnostic -> {
+                        // Filter through the diagnostics
+                        String issueType = diagnostic.diagnosticInfo().code();
+                        if (issueType.equals("SCAN_TOOL_DIAGNOSTICS")) {
+                            List<DiagnosticProperty<?>> properties = diagnostic.properties();
 
-                // Pass the context to each plugin to perform custom analysis
-                customScanners.forEach(customScanner -> {
-                    customScanner.performScan(context);
-                });
+                            properties.forEach(diagnosticProperty -> {
+                                // Validating the type of object received from the diagnostic
+                                if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.OTHER)) {
+                                    Object diagnosticIssue = diagnosticProperty.value();
+
+                                    // Creating a new issue through reflection API
+                                    try {
+                                        Issue externalIssue = new Issue(
+                                                (Integer) diagnosticIssue.getClass()
+                                                        .getMethod("getStartLine")
+                                                        .invoke(diagnosticIssue),
+                                                (Integer) diagnosticIssue.getClass()
+                                                        .getMethod("getStartLineOffset")
+                                                        .invoke(diagnosticIssue),
+                                                (Integer) diagnosticIssue.getClass()
+                                                        .getMethod("getEndLine")
+                                                        .invoke(diagnosticIssue),
+                                                (Integer) diagnosticIssue.getClass()
+                                                        .getMethod("getEndLineOffset")
+                                                        .invoke(diagnosticIssue),
+                                                (String) diagnosticIssue.getClass()
+                                                        .getMethod("getRuleID")
+                                                        .invoke(diagnosticIssue),
+                                                (String) diagnosticIssue.getClass()
+                                                        .getMethod("getMessage")
+                                                        .invoke(diagnosticIssue),
+                                                (String) diagnosticIssue.getClass()
+                                                        .getMethod("getIssueType")
+                                                        .invoke(diagnosticIssue),
+                                                (String) diagnosticIssue.getClass()
+                                                        .getMethod("getFileName")
+                                                        .invoke(diagnosticIssue),
+                                                (String) diagnosticIssue.getClass()
+                                                        .getMethod("getReportedFilePath")
+                                                        .invoke(diagnosticIssue)
+                                        );
+
+                                        issues.add(externalIssue);
+                                    } catch (IllegalAccessException | InvocationTargetException |
+                                             NoSuchMethodException ignored) {
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
             });
         });
 
@@ -162,24 +207,6 @@ public class BridgeCommand implements BLauncherCmd {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray issuesAsJson = gson.toJsonTree(issues).getAsJsonArray();
         outputStream.println(gson.toJson(issuesAsJson));
-    }
-
-    private URLClassLoader getUrlClassLoader() {
-        ArrayList<URL> jarUrls = new ArrayList<>();
-
-        try {
-            jarUrls.add(new File("C:\\Users\\Tharana Wanigaratne\\.ballerina\\repositories\\central.ballerina.io\\bala\\tharana_wanigaratne\\custom_compiler_plugin\\0.1.0\\java17\\compiler-plugin\\libs\\CustomCompilerPlugin-1.0-all.jar")
-                    .toURI()
-                    .toURL()
-            );
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        URLClassLoader externalJarClassLoader = new URLClassLoader(jarUrls.toArray(new URL[0]),
-                this.getClass().getClassLoader());
-
-        return externalJarClassLoader;
     }
 
     public String checkPath() {

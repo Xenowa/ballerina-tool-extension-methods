@@ -1,22 +1,18 @@
-# Architecture: Dedicated Tool Plugin based Approach
+# Architecture: Compiler Diagnostics based Approach
 
 ```mermaid
 sequenceDiagram
     participant BridgeTool
-    participant CustomScanner Interface
     participant CustomCompilerPlugin
     activate BridgeTool
     BridgeTool ->> BridgeTool: Perform internal scans
-    BridgeTool ->> CustomScanner Interface: Load compiler plugins through URLClassLoaders
-    activate CustomScanner Interface
-    BridgeTool ->> CustomScanner Interface: Pass a SensorContext object initiated from the tool
-    CustomScanner Interface ->> CustomCompilerPlugin: Pass a SensorContext object initiated from the tool
-    deactivate CustomScanner Interface
+    BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Retrieve syntax tree, semantic model and other required objects from the SensorContext
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through the SensorContext
+    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues as diagnostics
+    CustomCompilerPlugin ->> BridgeTool: Get diagnostics
     deactivate CustomCompilerPlugin
+    BridgeTool ->> BridgeTool: Filter Issue diagnostics
+    BridgeTool ->> BridgeTool: Add Filtered issues to all issues array
     deactivate BridgeTool
 ```
 

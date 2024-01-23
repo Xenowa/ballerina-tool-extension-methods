@@ -2,32 +2,72 @@ package org.wso2.ballerina.plugin;
 
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
-import io.ballerina.projects.plugins.CompilerPlugin;
+import io.ballerina.projects.Document;
+import io.ballerina.projects.Module;
+import io.ballerina.projects.ModuleCompilation;
+import io.ballerina.projects.Project;
+import io.ballerina.projects.plugins.AnalysisTask;
+import io.ballerina.projects.plugins.CodeAnalysisContext;
+import io.ballerina.projects.plugins.CodeAnalyzer;
+import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.projects.plugins.CompilerPluginContext;
 import org.wso2.ballerina.CustomScanner;
-import org.wso2.ballerina.SensorContext;
 
-public class CustomCompilerPlugin extends CompilerPlugin implements CustomScanner {
-    // Method not used
+import java.nio.file.Path;
+
+public class CustomCompilerPlugin extends CustomScanner {
+    // Method triggered via Package compilation
     @Override
     public void init(CompilerPluginContext compilerPluginContext) {
-        System.out.println("To engage, please run 'bal bridge'");
-    }
+        compilerPluginContext.addCodeAnalyzer(new CodeAnalyzer() {
+            @Override
+            public void init(CodeAnalysisContext codeAnalysisContext) {
+                codeAnalysisContext.addCompilationAnalysisTask(new AnalysisTask<CompilationAnalysisContext>() {
+                    @Override
+                    public void perform(CompilationAnalysisContext context) {
+                        context.currentPackage().moduleIds().forEach(moduleId -> {
+                            // Get access to the project modules
+                            Module module = context.currentPackage().module(moduleId);
 
-    // Engaged and used via Bridge Tool
-    @Override
-    public void performScan(SensorContext context) {
-        // Retrieve the syntax tree from the sensor context
-        SyntaxTree syntaxTree = context.getSyntaxTree();
+                            // Iterate through each document of the module
+                            module.documentIds().forEach(documentId -> {
+                                // Get access to the module documents
+                                Document document = module.document(documentId);
 
-        // Retrieve the semantic model from the sensor context
-        SemanticModel semanticModel = context.getSemanticModel();
+                                // Retrieve the syntax tree from the parsed ballerina document
+                                SyntaxTree syntaxTree = document.syntaxTree();
 
-        // Simulating performing a custom analysis by reporting a custom issue for each document
-        context.reportExternalIssue(0,
-                0,
-                0,
-                0,
-                "Custom compiler plugin issue");
+                                // Retrieve the compilation of the module
+                                ModuleCompilation compilation = module.getCompilation();
+
+                                // Retrieve the semantic model from the ballerina document compilation
+                                SemanticModel semanticModel = compilation.getSemanticModel();
+
+                                // Retrieve the current document path
+                                Project project = module.project();
+                                Path documentPath = project.documentPath(documentId).orElse(null);
+
+                                // Retrieve the current module name
+                                String moduleName = module.moduleName().toString();
+
+                                // Retrieve the current document name
+                                String documentName = document.name();
+
+                                // Simulating performing a custom analysis by reporting a custom issue for each document
+                                reportExternalIssue(0,
+                                        0,
+                                        0,
+                                        0,
+                                        "Custom compiler plugin issue",
+                                        document,
+                                        module,
+                                        project,
+                                        context);
+                            });
+                        });
+                    }
+                });
+            }
+        });
     }
 }
