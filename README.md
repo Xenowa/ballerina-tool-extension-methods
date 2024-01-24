@@ -15,18 +15,14 @@ sequenceDiagram
     deactivate SensorContextFactory 1
     BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    rect rgb(255, 50, 50)
-        CustomCompilerPlugin ->> SensorContextFactory 2: Request reporter
-        activate SensorContextFactory 2
-        SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
-        activate SensorContextFactory 1
-        note over SensorContextFactory 1, SensorContextFactory 2: Throws class cast exception for casting <br> SensorContext from CustomToolClassLoader <br> to URLClassLoader
-        SensorContextFactory 1 ->> SensorContextFactory 2: Send reporter through static SensorContext object
-        deactivate SensorContextFactory 1
-        SensorContextFactory 2 ->> CustomCompilerPlugin: Send reporter
-        deactivate SensorContextFactory 2
-        CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through reporter
-    end
+    CustomCompilerPlugin ->> SensorContextFactory 2: Send issues through reportIssues method
+    note over CustomCompilerPlugin, SensorContextFactory 2: Method accept Java default <br> primitives and reference types
+    activate SensorContextFactory 2
+    SensorContextFactory 2 ->> SensorContextFactory 1: Send issues through reporter of CustomToolCLassLoader via reflection
+    deactivate SensorContextFactory 2
+    activate SensorContextFactory 1
+    SensorContextFactory 1 ->> SensorContextFactory 1: Report external issues
+    deactivate SensorContextFactory 1
     deactivate CustomCompilerPlugin
     deactivate BridgeTool
 ```

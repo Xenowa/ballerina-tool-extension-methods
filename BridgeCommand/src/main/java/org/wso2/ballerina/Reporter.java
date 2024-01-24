@@ -1,10 +1,5 @@
 package org.wso2.ballerina;
 
-import io.ballerina.projects.Document;
-import io.ballerina.projects.Module;
-import io.ballerina.projects.Project;
-
-import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class Reporter {
@@ -42,31 +37,24 @@ public class Reporter {
         issues.add(issue);
     }
 
-    // External methods (Synchronized, since multiple reporters can be using this from compiler plugins)
-    public synchronized void reportExternalIssue(int startLine,
-                                                 int startLineOffset,
-                                                 int endLine,
-                                                 int endLineOffset,
-                                                 String message,
-                                                 Document reportedDocument,
-                                                 Module reportedModule,
-                                                 Project reportedProject) {
-        String moduleName = reportedModule.moduleName().toString();
-        String documentName = reportedDocument.name();
-        Path externalIssuesFilePath = reportedProject.documentPath(reportedDocument.documentId()).orElse(null);
+    // External method used by reporter
+    public void reportExternalIssue(int startLine,
+                                    int startLineOffset,
+                                    int endLine,
+                                    int endLineOffset,
+                                    String message,
+                                    String fileName,
+                                    String externalIssuesFilePath) {
+        Issue issue = new Issue(startLine,
+                startLineOffset,
+                endLine,
+                endLineOffset,
+                "S1001", // TODO: Generated internally
+                message,
+                "CUSTOM_CHECK_VIOLATION", // TODO: Labelled internally
+                fileName,
+                externalIssuesFilePath);
 
-        if (externalIssuesFilePath != null) {
-            Issue issue = new Issue(startLine,
-                    startLineOffset,
-                    endLine,
-                    endLineOffset,
-                    "S1001", // TODO: Generated internally
-                    message,
-                    "CUSTOM_CHECK_VIOLATION", // TODO: Labelled internally
-                    moduleName + "/" + documentName,
-                    externalIssuesFilePath.toString());
-
-            issues.add(issue);
-        }
+        issues.add(issue);
     }
 }

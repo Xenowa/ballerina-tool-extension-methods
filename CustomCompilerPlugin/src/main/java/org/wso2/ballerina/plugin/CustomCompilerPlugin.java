@@ -11,7 +11,6 @@ import io.ballerina.projects.plugins.CodeAnalysisContext;
 import io.ballerina.projects.plugins.CodeAnalyzer;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.projects.plugins.CompilerPluginContext;
-import org.wso2.ballerina.Reporter;
 import org.wso2.ballerina.SensorContextFactory;
 
 public class CustomCompilerPlugin extends SensorContextFactory {
@@ -45,11 +44,8 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                 // Retrieve the current document path
                                 Project project = module.project();
 
-                                // Get the static reporter from the context of the factory
-                                Reporter reporter = getReporter();
-
                                 // Simulating performing a custom analysis by reporting a custom issue for each document
-                                reporter.reportExternalIssue(0,
+                                reportIssue(0,
                                         0,
                                         0,
                                         0,
