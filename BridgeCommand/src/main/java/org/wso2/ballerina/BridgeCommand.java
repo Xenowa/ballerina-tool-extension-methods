@@ -16,14 +16,10 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
 
 @CommandLine.Command(name = "bridge", description = "Link with compiler plugins")
 public class BridgeCommand implements BLauncherCmd {
@@ -132,12 +128,11 @@ public class BridgeCommand implements BLauncherCmd {
                 SensorContext context = new SensorContext(issues,
                         documentPath != null ? documentPath.toString() : null,
                         moduleName,
-                        documentName,
-                        syntaxTree,
-                        semanticModel);
+                        documentName);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
-                context.reportIssue(0,
+                Reporter reporter = context.getReporter();
+                reporter.reportIssue(0,
                         0,
                         0,
                         0,
@@ -145,16 +140,13 @@ public class BridgeCommand implements BLauncherCmd {
                         "Local issue",
                         "INTERNAL_CHECK_VIOLATION");
 
-                // Load Tool plugins
-                URLClassLoader ucl = getUrlClassLoader();
+                if (module.isDefaultModule()) {
+                    // Set the local context to the factory (CustomToolClassLoader)
+                    SensorContextFactory.setContext(context);
 
-                // Read common interface implementations
-                ServiceLoader<CustomScanner> customScanners = ServiceLoader.load(CustomScanner.class, ucl);
-
-                // Pass the context to each plugin to perform custom analysis
-                customScanners.forEach(customScanner -> {
-                    customScanner.performScan(context);
-                });
+                    // Engage custom compiler plugins through package compilation
+                    project.currentPackage().getCompilation();
+                }
             });
         });
 
@@ -162,24 +154,6 @@ public class BridgeCommand implements BLauncherCmd {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray issuesAsJson = gson.toJsonTree(issues).getAsJsonArray();
         outputStream.println(gson.toJson(issuesAsJson));
-    }
-
-    private URLClassLoader getUrlClassLoader() {
-        ArrayList<URL> jarUrls = new ArrayList<>();
-
-        try {
-            jarUrls.add(new File("C:\\Users\\Tharana Wanigaratne\\.ballerina\\repositories\\central.ballerina.io\\bala\\tharana_wanigaratne\\custom_compiler_plugin\\0.1.0\\java17\\compiler-plugin\\libs\\CustomCompilerPlugin-1.0-all.jar")
-                    .toURI()
-                    .toURL()
-            );
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        URLClassLoader externalJarClassLoader = new URLClassLoader(jarUrls.toArray(new URL[0]),
-                this.getClass().getClassLoader());
-
-        return externalJarClassLoader;
     }
 
     public String checkPath() {

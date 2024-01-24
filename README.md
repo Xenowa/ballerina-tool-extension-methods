@@ -1,21 +1,32 @@
-# Architecture: Dedicated Tool Plugin based Approach
+# Architecture: ClassLoader based Approach
 
 ```mermaid
 sequenceDiagram
     participant BridgeTool
-    participant CustomScanner Interface
+    participant SensorContextFactory 1
+    note over BridgeTool, SensorContextFactory 1: Uses CustomToolClassLoader
+    participant SensorContextFactory 2
     participant CustomCompilerPlugin
+    note over SensorContextFactory 2, CustomCompilerPlugin: Uses URLClassLoader
     activate BridgeTool
-    BridgeTool ->> BridgeTool: Perform internal scans
-    BridgeTool ->> CustomScanner Interface: Load compiler plugins through URLClassLoaders
-    activate CustomScanner Interface
-    BridgeTool ->> CustomScanner Interface: Pass a SensorContext object initiated from the tool
-    CustomScanner Interface ->> CustomCompilerPlugin: Pass a SensorContext object initiated from the tool
-    deactivate CustomScanner Interface
+    BridgeTool ->> SensorContextFactory 1: Send SensorContext Object
+    activate SensorContextFactory 1
+    SensorContextFactory 1 ->> SensorContextFactory 1: Initialize static sensorcontext attribute
+    deactivate SensorContextFactory 1
+    BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Retrieve syntax tree, semantic model and other required objects from the SensorContext
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through the SensorContext
+    rect rgb(255, 50, 50)
+        CustomCompilerPlugin ->> SensorContextFactory 2: Request reporter
+        activate SensorContextFactory 2
+        SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
+        activate SensorContextFactory 1
+        note over SensorContextFactory 1, SensorContextFactory 2: Throws class cast exception for casting <br> SensorContext from CustomToolClassLoader <br> to URLClassLoader
+        SensorContextFactory 1 ->> SensorContextFactory 2: Send reporter through static SensorContext object
+        deactivate SensorContextFactory 1
+        SensorContextFactory 2 ->> CustomCompilerPlugin: Send reporter
+        deactivate SensorContextFactory 2
+        CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through reporter
+    end
     deactivate CustomCompilerPlugin
     deactivate BridgeTool
 ```
