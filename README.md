@@ -1,4 +1,4 @@
-# Architecture: ClassLoader based Approach
+# Architecture: ClassLoader with Reflection based Approach
 
 ```mermaid
 sequenceDiagram
