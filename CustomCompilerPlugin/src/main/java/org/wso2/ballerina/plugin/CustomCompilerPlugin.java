@@ -46,7 +46,7 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                 Project project = module.project();
 
                                 // Get the static reporter from the context of the factory
-                                Reporter reporter = getReporter();
+                                Reporter reporter = getDeserializedReporter();
 
                                 // Simulating performing a custom analysis by reporting a custom issue for each document
                                 reporter.reportExternalIssue(0,
@@ -57,6 +57,9 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                         document,
                                         module,
                                         project);
+
+                                // Save the reported data to file
+                                saveSerializedReporter();
                             });
                         });
                     }

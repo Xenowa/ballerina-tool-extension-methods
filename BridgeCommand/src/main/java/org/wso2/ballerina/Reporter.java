@@ -8,12 +8,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class Reporter {
-    // Internal Attributes
+    // Internal attributes
     private final String filName;
     private final String issuesFilePath;
-
-    // Common attribute shared between internal and external reporter
     private final ArrayList<Issue> issues;
+    // External attributes
+    private final ArrayList<Issue> externalIssues = new ArrayList<>();
 
     // Internal methods
     public Reporter(String filName, ArrayList<Issue> issues, String issuesFilePath) {
@@ -42,15 +42,23 @@ public class Reporter {
         issues.add(issue);
     }
 
-    // External methods (Synchronized, since multiple reporters can be using this from compiler plugins)
-    public synchronized void reportExternalIssue(int startLine,
-                                                 int startLineOffset,
-                                                 int endLine,
-                                                 int endLineOffset,
-                                                 String message,
-                                                 Document reportedDocument,
-                                                 Module reportedModule,
-                                                 Project reportedProject) {
+    // External methods
+    ArrayList<Issue> getExternalIssues() {
+        return externalIssues;
+    }
+
+    void addExternalIssues(ArrayList<Issue> issues) {
+        externalIssues.addAll(issues);
+    }
+
+    public void reportExternalIssue(int startLine,
+                                    int startLineOffset,
+                                    int endLine,
+                                    int endLineOffset,
+                                    String message,
+                                    Document reportedDocument,
+                                    Module reportedModule,
+                                    Project reportedProject) {
         String moduleName = reportedModule.moduleName().toString();
         String documentName = reportedDocument.name();
         Path externalIssuesFilePath = reportedProject.documentPath(reportedDocument.documentId()).orElse(null);
@@ -66,7 +74,7 @@ public class Reporter {
                     moduleName + "/" + documentName,
                     externalIssuesFilePath.toString());
 
-            issues.add(issue);
+            externalIssues.add(issue);
         }
     }
 }

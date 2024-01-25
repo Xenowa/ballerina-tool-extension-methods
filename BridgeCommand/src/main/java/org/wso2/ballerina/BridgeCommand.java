@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @CommandLine.Command(name = "bridge", description = "Link with compiler plugins")
 public class BridgeCommand implements BLauncherCmd {
@@ -94,7 +95,7 @@ public class BridgeCommand implements BLauncherCmd {
         Project project = ProjectLoader.loadProject(Path.of(userPath));
 
         // Array to hold all issues
-        ArrayList<Issue> issues = new ArrayList<>();
+        AtomicReference<ArrayList<Issue>> issues = new AtomicReference<>(new ArrayList<>());
 
         // Iterate through each module of the project
         project.currentPackage().moduleIds().forEach(moduleId -> {
@@ -125,7 +126,7 @@ public class BridgeCommand implements BLauncherCmd {
                 String documentName = document.name();
 
                 // Initialize the reporter
-                SensorContext context = new SensorContext(issues,
+                SensorContext context = new SensorContext(issues.get(),
                         documentPath != null ? documentPath.toString() : null,
                         moduleName,
                         documentName);
@@ -141,18 +142,30 @@ public class BridgeCommand implements BLauncherCmd {
                         "INTERNAL_CHECK_VIOLATION");
 
                 if (module.isDefaultModule()) {
-                    // Set the local context to the factory (CustomToolClassLoader)
-                    SensorContextFactory.setContext(context);
+                    SensorContextFactory.saveSerializedContext(context);
 
                     // Engage custom compiler plugins through package compilation
                     project.currentPackage().getCompilation();
+
+                    // Retrieve the internal issues array
+                    ArrayList<Issue> internalIssues = issues.get();
+
+                    // Add external issues to the internal issues array
+                    boolean externalIssuesAdded = internalIssues.addAll(
+                            SensorContextFactory.getDeserializedContext()
+                                    .getReporter()
+                                    .getExternalIssues());
+
+                    if (externalIssuesAdded) {
+                        issues.set(internalIssues);
+                    }
                 }
             });
         });
 
         // output scanned results to console
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonArray issuesAsJson = gson.toJsonTree(issues).getAsJsonArray();
+        JsonArray issuesAsJson = gson.toJsonTree(issues.get()).getAsJsonArray();
         outputStream.println(gson.toJson(issuesAsJson));
     }
 

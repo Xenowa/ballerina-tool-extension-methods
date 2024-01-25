@@ -1,33 +1,29 @@
-# Architecture: ClassLoader based Approach
+# Architecture: Serializing and Deserializing based Approach
 
 ```mermaid
 sequenceDiagram
     participant BridgeTool
-    participant SensorContextFactory 1
-    note over BridgeTool, SensorContextFactory 1: Uses CustomToolClassLoader
-    participant SensorContextFactory 2
+    participant SensorContextFactory
     participant CustomCompilerPlugin
-    note over SensorContextFactory 2, CustomCompilerPlugin: Uses URLClassLoader
     activate BridgeTool
-    BridgeTool ->> SensorContextFactory 1: Send SensorContext Object
-    activate SensorContextFactory 1
-    SensorContextFactory 1 ->> SensorContextFactory 1: Initialize static sensorcontext attribute
-    deactivate SensorContextFactory 1
+    BridgeTool ->> BridgeTool: Perform internal scans
+    BridgeTool ->> SensorContextFactory: Pass sensor context, serializes and saves to file
+    activate SensorContextFactory
+    deactivate SensorContextFactory
     BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    rect rgb(255, 50, 50)
-        CustomCompilerPlugin ->> SensorContextFactory 2: Request reporter
-        activate SensorContextFactory 2
-        SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
-        activate SensorContextFactory 1
-        note over SensorContextFactory 1, SensorContextFactory 2: Throws class cast exception for casting <br> SensorContext from CustomToolClassLoader <br> to URLClassLoader
-        SensorContextFactory 1 ->> SensorContextFactory 2: Send reporter through static SensorContext object
-        deactivate SensorContextFactory 1
-        SensorContextFactory 2 ->> CustomCompilerPlugin: Send reporter
-        deactivate SensorContextFactory 2
-        CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through reporter
-    end
+    CustomCompilerPlugin ->> SensorContextFactory: Request reporter
+    activate SensorContextFactory
+    SensorContextFactory ->> CustomCompilerPlugin: Get context from file, deserializes and sends reporter
+    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
+    CustomCompilerPlugin ->> SensorContextFactory: Pass sensor context, serializes and saves to file
+    deactivate SensorContextFactory
     deactivate CustomCompilerPlugin
+    BridgeTool ->> SensorContextFactory: Request external issues
+    activate SensorContextFactory
+    SensorContextFactory ->> BridgeTool: Get context from file, deserializes and sends external issues
+    deactivate SensorContextFactory
+    BridgeTool ->> BridgeTool: Add external issues to issues array
     deactivate BridgeTool
 ```
 
