@@ -57,6 +57,8 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                         document,
                                         module,
                                         project);
+
+                                saveSerializedContext();
                             });
                         });
                     }

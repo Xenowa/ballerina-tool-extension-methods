@@ -146,6 +146,9 @@ public class BridgeCommand implements BLauncherCmd {
 
                     // Engage custom compiler plugins through package compilation
                     project.currentPackage().getCompilation();
+
+                    // Retrieve back the deserialized context and the reported external issues
+                    issues.addAll(SensorContextFactory.getContext().getReporter().getExternalIssues());
                 }
             });
         });

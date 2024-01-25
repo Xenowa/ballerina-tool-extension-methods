@@ -14,12 +14,21 @@ public class Reporter {
 
     // Common attribute shared between internal and external reporter
     private final ArrayList<Issue> issues;
+    private final ArrayList<Issue> externalIssues = new ArrayList<>();
 
     // Internal methods
     public Reporter(String filName, ArrayList<Issue> issues, String issuesFilePath) {
         this.filName = filName;
         this.issues = issues;
         this.issuesFilePath = issuesFilePath;
+    }
+
+    ArrayList<Issue> getExternalIssues() {
+        return externalIssues;
+    }
+
+    void setExternalIssues(ArrayList<Issue> issues) {
+        externalIssues.addAll(issues);
     }
 
     void reportIssue(int startLine,
@@ -66,7 +75,7 @@ public class Reporter {
                     moduleName + "/" + documentName,
                     externalIssuesFilePath.toString());
 
-            issues.add(issue);
+            externalIssues.add(issue);
         }
     }
 }
