@@ -142,7 +142,7 @@ public class BridgeCommand implements BLauncherCmd {
                         "INTERNAL_CHECK_VIOLATION");
 
                 if (module.isDefaultModule()) {
-                    SensorContextFactory.saveSerializedContext(context);
+                    SensorContextHolder.saveSerializedContext(context);
 
                     // Engage custom compiler plugins through package compilation
                     project.currentPackage().getCompilation();
@@ -152,7 +152,7 @@ public class BridgeCommand implements BLauncherCmd {
 
                     // Add external issues to the internal issues array
                     boolean externalIssuesAdded = internalIssues.addAll(
-                            SensorContextFactory.getDeserializedContext()
+                            SensorContextHolder.getDeserializedContext()
                                     .getReporter()
                                     .getExternalIssues());
 

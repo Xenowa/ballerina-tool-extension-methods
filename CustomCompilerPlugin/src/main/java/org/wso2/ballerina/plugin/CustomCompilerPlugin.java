@@ -11,10 +11,10 @@ import io.ballerina.projects.plugins.CodeAnalysisContext;
 import io.ballerina.projects.plugins.CodeAnalyzer;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.projects.plugins.CompilerPluginContext;
-import org.wso2.ballerina.Reporter;
-import org.wso2.ballerina.SensorContextFactory;
+import org.wso2.ballerina.SensorContext;
+import org.wso2.ballerina.SensorContextHolder;
 
-public class CustomCompilerPlugin extends SensorContextFactory {
+public class CustomCompilerPlugin extends SensorContextHolder {
     // Method triggered via Package compilation
     @Override
     public void init(CompilerPluginContext compilerPluginContext) {
@@ -45,11 +45,11 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                 // Retrieve the current document path
                                 Project project = module.project();
 
-                                // Get the static reporter from the context of the factory
-                                Reporter reporter = getDeserializedReporter();
+                                // Get the serialized context from file
+                                SensorContext externalContext = getContext();
 
                                 // Simulating performing a custom analysis by reporting a custom issue for each document
-                                reporter.reportExternalIssue(0,
+                                externalContext.getReporter().reportExternalIssue(0,
                                         0,
                                         0,
                                         0,
@@ -59,7 +59,7 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                         project);
 
                                 // Save the reported data to file
-                                saveSerializedReporter();
+                                saveContext();
                             });
                         });
                     }

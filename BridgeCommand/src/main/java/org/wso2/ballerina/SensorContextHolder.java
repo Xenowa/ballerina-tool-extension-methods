@@ -13,7 +13,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public abstract class SensorContextFactory extends CompilerPlugin {
+public abstract class SensorContextHolder extends CompilerPlugin {
     private static final String serializeContextFile = "serialized-context-out.json";
     private static final Gson gson = new Gson();
     private SensorContext deserializedContext = null;
@@ -48,7 +48,7 @@ public abstract class SensorContextFactory extends CompilerPlugin {
     }
 
     // Used by compiler plugins (Optimized methods for concurrent operations by multiple compiler plugins)
-    public synchronized Reporter getDeserializedReporter() {
+    public synchronized SensorContext getContext() {
         // Read back the serialized context and return the reporter
         if (deserializedContext == null) {
             try {
@@ -56,16 +56,17 @@ public abstract class SensorContextFactory extends CompilerPlugin {
                 JsonReader reader = new JsonReader(fileReader);
                 deserializedContext = gson.fromJson(reader, SensorContext.class);
                 reader.close();
-                return deserializedContext.getReporter();
+
+                return deserializedContext;
             } catch (IOException ignored) {
                 System.out.println("To engage compiler plugin please run 'bal bridge'");
             }
         }
 
-        return deserializedContext.getReporter();
+        return deserializedContext;
     }
 
-    public synchronized void saveSerializedReporter() {
+    public synchronized void saveContext() {
         if (deserializedContext != null) {
             try {
                 // Read contents of the file
