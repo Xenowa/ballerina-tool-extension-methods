@@ -30,7 +30,7 @@ public abstract class SensorContextFactory extends CompilerPlugin {
     }
 
     // Used externally
-    public synchronized Reporter getReporter() {
+    public synchronized SensorContext getDeserializedContext() {
         if (externalSensorContext == null) {
             // As compiler plugins use the URLClassLoader, getting the context through CustomToolClassLoader and reflection
             ClassLoader customToolClassLoader = Thread.currentThread().getContextClassLoader();
@@ -42,14 +42,14 @@ public abstract class SensorContextFactory extends CompilerPlugin {
                 externalSensorContext = gson.fromJson(classLoadedSerializedContext, SensorContext.class);
 
                 // Return the CustomToolClassLoader reporter
-                return externalSensorContext.getReporter();
+                return externalSensorContext;
             } catch (NoSuchFieldException | ClassNotFoundException | IllegalAccessException e) {
                 System.out.println("Please run 'bal bridge' to engage the plugin");
                 throw new RuntimeException(e);
             }
         }
 
-        return externalSensorContext.getReporter();
+        return externalSensorContext;
     }
 
     public synchronized void saveSerializedContext() {
