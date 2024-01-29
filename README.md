@@ -11,22 +11,29 @@ sequenceDiagram
     activate BridgeTool
     BridgeTool ->> SensorContextFactory 1: Send SensorContext Object
     activate SensorContextFactory 1
-    SensorContextFactory 1 ->> SensorContextFactory 1: Initialize static sensorcontext attribute
+    SensorContextFactory 1 ->> SensorContextFactory 1: Initialize static sensorcontext attribute through serializing
     deactivate SensorContextFactory 1
     BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    rect rgb(255, 50, 50)
-        CustomCompilerPlugin ->> SensorContextFactory 2: Request reporter
-        activate SensorContextFactory 2
-        SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
-        activate SensorContextFactory 1
-        note over SensorContextFactory 1, SensorContextFactory 2: Throws class cast exception for casting <br> SensorContext from CustomToolClassLoader <br> to URLClassLoader
-        SensorContextFactory 1 ->> SensorContextFactory 2: Send reporter through static SensorContext object
-        deactivate SensorContextFactory 1
-        SensorContextFactory 2 ->> CustomCompilerPlugin: Send reporter
-        deactivate SensorContextFactory 2
-        CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through reporter
-    end
+    CustomCompilerPlugin ->> SensorContextFactory 2: Request context
+    activate SensorContextFactory 2
+    SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
+    activate SensorContextFactory 1
+    SensorContextFactory 1 ->> SensorContextFactory 2: Send serialized static context
+    deactivate SensorContextFactory 1
+    SensorContextFactory 2 ->> CustomCompilerPlugin: Send De-serialized context
+    deactivate SensorContextFactory 2
+    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through context
+    CustomCompilerPlugin ->> SensorContextFactory 2: Call save method
+    activate SensorContextFactory 2
+    SensorContextFactory 2 ->> SensorContextFactory 2: Serialize context
+    SensorContextFactory 2 ->> SensorContextFactory 1: Save serialized context
+    deactivate SensorContextFactory 2
+    activate SensorContextFactory 1
+    BridgeTool ->> SensorContextFactory 1: Requests external issues
+    SensorContextFactory 1 ->> BridgeTool: Get external issues through context
+    BridgeTool ->> BridgeTool: Add external issues to issues array
+    deactivate SensorContextFactory 1
     deactivate CustomCompilerPlugin
     deactivate BridgeTool
 ```
