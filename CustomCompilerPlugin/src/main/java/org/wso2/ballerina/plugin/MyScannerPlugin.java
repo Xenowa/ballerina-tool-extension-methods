@@ -2,21 +2,20 @@ package org.wso2.ballerina.plugin;
 
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
-import io.ballerina.projects.plugins.CompilerPlugin;
-import io.ballerina.projects.plugins.CompilerPluginContext;
-import org.wso2.ballerina.CustomScanner;
-import org.wso2.ballerina.SensorContext;
+import org.wso2.ballerina.CustomScannerPlugin;
+import org.wso2.ballerina.ScannerContext;
 
-public class CustomCompilerPlugin extends CompilerPlugin implements CustomScanner {
-    // Method not used
+public class MyScannerPlugin implements CustomScannerPlugin {
+    private ScannerContext context;
+
     @Override
-    public void init(CompilerPluginContext compilerPluginContext) {
-        System.out.println("To engage, please run 'bal bridge'");
+    public void init(ScannerContext context) {
+        this.context = context;
     }
 
     // Engaged and used via Bridge Tool
     @Override
-    public void performScan(SensorContext context) {
+    public void perform() {
         // Retrieve the syntax tree from the sensor context
         SyntaxTree syntaxTree = context.getSyntaxTree();
 
@@ -24,10 +23,13 @@ public class CustomCompilerPlugin extends CompilerPlugin implements CustomScanne
         SemanticModel semanticModel = context.getSemanticModel();
 
         // Simulating performing a custom analysis by reporting a custom issue for each document
-        context.reportExternalIssue(0,
+        context.getReporter().reportExternalIssue(0,
                 0,
                 0,
                 0,
-                "Custom compiler plugin issue");
+                "Custom compiler plugin issue",
+                context.getCurrentDocument(),
+                context.getCurrentModule(),
+                context.getCurrentProject());
     }
 }

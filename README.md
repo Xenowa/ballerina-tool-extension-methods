@@ -2,22 +2,16 @@
 
 ```mermaid
 sequenceDiagram
-    participant BridgeTool
-    participant CustomScanner Interface
-    participant CustomCompilerPlugin
-    activate BridgeTool
-    BridgeTool ->> BridgeTool: Perform internal scans
-    BridgeTool ->> CustomScanner Interface: Load compiler plugins through URLClassLoaders
-    activate CustomScanner Interface
-    BridgeTool ->> CustomScanner Interface: Pass a SensorContext object initiated from the tool
-    CustomScanner Interface ->> CustomCompilerPlugin: Pass a SensorContext object initiated from the tool
-    deactivate CustomScanner Interface
-    activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Retrieve syntax tree, semantic model and other required objects from the SensorContext
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through the SensorContext
-    deactivate CustomCompilerPlugin
-    deactivate BridgeTool
+    participant Bridge Tool
+    participant MyScannerPlugin implements CustomScannerPlugin
+    activate Bridge Tool
+    Bridge Tool ->> Bridge Tool: Perform core scan
+    Bridge Tool ->> MyScannerPlugin implements CustomScannerPlugin: Load compiler plugins through URLClassLoaders
+    activate MyScannerPlugin implements CustomScannerPlugin
+    Bridge Tool ->> MyScannerPlugin implements CustomScannerPlugin: Pass a SensorContext object initiated from the tool
+    MyScannerPlugin implements CustomScannerPlugin ->> MyScannerPlugin implements CustomScannerPlugin: Perform external scans and report issues via <br> the Reporter accessed via the ScannerContext
+    deactivate MyScannerPlugin implements CustomScannerPlugin
+    deactivate Bridge Tool
 ```
 
 # Ballerina Tool extension methods

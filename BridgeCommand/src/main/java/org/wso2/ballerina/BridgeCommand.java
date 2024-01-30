@@ -129,31 +129,35 @@ public class BridgeCommand implements BLauncherCmd {
                 String documentName = document.name();
 
                 // Initialize the reporter
-                SensorContext context = new SensorContext(issues,
-                        documentPath != null ? documentPath.toString() : null,
-                        moduleName,
-                        documentName,
+                ScannerContextImpl context = new ScannerContextImpl(issues,
                         syntaxTree,
-                        semanticModel);
+                        semanticModel,
+                        document,
+                        module,
+                        project);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
-                context.reportIssue(0,
+                context.getReporter().reportIssue(0,
                         0,
                         0,
                         0,
                         "S107",
                         "Local issue",
-                        "INTERNAL_CHECK_VIOLATION");
+                        "INTERNAL_CHECK_VIOLATION",
+                        context.getCurrentDocument(),
+                        context.getCurrentModule(),
+                        context.getCurrentProject());
 
                 // Load Tool plugins
                 URLClassLoader ucl = getUrlClassLoader();
 
                 // Read common interface implementations
-                ServiceLoader<CustomScanner> customScanners = ServiceLoader.load(CustomScanner.class, ucl);
+                ServiceLoader<CustomScannerPlugin> customScanners = ServiceLoader.load(CustomScannerPlugin.class, ucl);
 
                 // Pass the context to each plugin to perform custom analysis
-                customScanners.forEach(customScanner -> {
-                    customScanner.performScan(context);
+                customScanners.forEach(customScannerPlugin -> {
+                    customScannerPlugin.init(context);
+                    customScannerPlugin.perform();
                 });
             });
         });
