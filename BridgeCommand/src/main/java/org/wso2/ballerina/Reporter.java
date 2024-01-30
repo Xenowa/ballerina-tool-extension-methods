@@ -27,10 +27,6 @@ public class Reporter {
         return externalIssues;
     }
 
-    void setExternalIssues(ArrayList<Issue> issues) {
-        externalIssues.addAll(issues);
-    }
-
     void reportIssue(int startLine,
                      int startLineOffset,
                      int endLine,
@@ -51,7 +47,7 @@ public class Reporter {
         issues.add(issue);
     }
 
-    // External methods (Synchronized, since multiple reporters can be using this from compiler plugins)
+    // External methods (Synchronized, since multiple compiler plugins can be using this)
     public synchronized void reportExternalIssue(int startLine,
                                                  int startLineOffset,
                                                  int endLine,

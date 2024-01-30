@@ -12,9 +12,9 @@ import io.ballerina.projects.plugins.CodeAnalyzer;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.projects.plugins.CompilerPluginContext;
 import org.wso2.ballerina.SensorContext;
-import org.wso2.ballerina.SensorContextFactory;
+import org.wso2.ballerina.SensorContextHolder;
 
-public class CustomCompilerPlugin extends SensorContextFactory {
+public class CustomCompilerPlugin extends SensorContextHolder {
     // Method triggered via Package compilation
     @Override
     public void init(CompilerPluginContext compilerPluginContext) {
@@ -46,7 +46,7 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                 Project project = module.project();
 
                                 // Get the static reporter from the context of the factory
-                                SensorContext sensorContext = getDeserializedContext();
+                                SensorContext sensorContext = getContext();
 
                                 // Simulating performing a custom analysis by reporting a custom issue for each document
                                 sensorContext.getReporter().reportExternalIssue(0,
@@ -57,8 +57,6 @@ public class CustomCompilerPlugin extends SensorContextFactory {
                                         document,
                                         module,
                                         project);
-
-                                saveSerializedContext();
                             });
                         });
                     }

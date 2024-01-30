@@ -131,8 +131,7 @@ public class BridgeCommand implements BLauncherCmd {
                         documentName);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
-                Reporter reporter = context.getReporter();
-                reporter.reportIssue(0,
+                context.getReporter().reportIssue(0,
                         0,
                         0,
                         0,
@@ -141,14 +140,14 @@ public class BridgeCommand implements BLauncherCmd {
                         "INTERNAL_CHECK_VIOLATION");
 
                 if (module.isDefaultModule()) {
-                    // Set the local context to the factory (CustomToolClassLoader)
-                    SensorContextFactory.setContext(context);
+                    // Set the local context to the context holder (App Class Loader)
+                    SensorContextHolder.setContext(context);
 
                     // Engage custom compiler plugins through package compilation
                     project.currentPackage().getCompilation();
 
-                    // Retrieve back the deserialized context and the reported external issues
-                    issues.addAll(SensorContextFactory.getContext().getReporter().getExternalIssues());
+                    // Save all external issues to issues array
+                    issues.addAll(context.getReporter().getExternalIssues());
                 }
             });
         });

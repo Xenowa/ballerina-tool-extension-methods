@@ -196,6 +196,7 @@ tasks.shadowJar {
     exclude "template.execution.mustache"
     exclude "testng.css"
     exclude "testngtasks"
+    exclude "jballerina-tools-2201.8.4.zip"
 }
 
 artifacts {

@@ -1,41 +1,28 @@
-# Architecture: ClassLoader based Approach
+# Architecture: Ballerina Distribution Bundling based Approach
 
 ```mermaid
 sequenceDiagram
-    participant BridgeTool
-    participant SensorContextFactory 1
-    note over BridgeTool, SensorContextFactory 1: Uses CustomToolClassLoader
-    participant SensorContextFactory 2
+    participant BridgeTool (in Distribution)
+    participant SensorContextHolder
     participant CustomCompilerPlugin
-    note over SensorContextFactory 2, CustomCompilerPlugin: Uses URLClassLoader
-    activate BridgeTool
-    BridgeTool ->> SensorContextFactory 1: Send SensorContext Object
-    activate SensorContextFactory 1
-    SensorContextFactory 1 ->> SensorContextFactory 1: Initialize static sensorcontext attribute through serializing
-    deactivate SensorContextFactory 1
-    BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
+    BridgeTool (in Distribution) ->> SensorContextHolder: Save context as static attribute
+    activate BridgeTool (in Distribution)
+    activate SensorContextHolder
+    deactivate SensorContextHolder
+    BridgeTool (in Distribution) ->> CustomCompilerPlugin: Engage through package compilation
     activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> SensorContextFactory 2: Request context
-    activate SensorContextFactory 2
-    SensorContextFactory 2 ->> SensorContextFactory 1: Request SensorContext Object through CustomToolClassLoader
-    activate SensorContextFactory 1
-    SensorContextFactory 1 ->> SensorContextFactory 2: Send serialized static context
-    deactivate SensorContextFactory 1
-    SensorContextFactory 2 ->> CustomCompilerPlugin: Send De-serialized context
-    deactivate SensorContextFactory 2
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues through context
-    CustomCompilerPlugin ->> SensorContextFactory 2: Call save method
-    activate SensorContextFactory 2
-    SensorContextFactory 2 ->> SensorContextFactory 2: Serialize context
-    SensorContextFactory 2 ->> SensorContextFactory 1: Save serialized context
-    deactivate SensorContextFactory 2
-    activate SensorContextFactory 1
-    BridgeTool ->> SensorContextFactory 1: Requests external issues
-    SensorContextFactory 1 ->> BridgeTool: Get external issues through context
-    BridgeTool ->> BridgeTool: Add external issues to issues array
-    deactivate SensorContextFactory 1
+    CustomCompilerPlugin ->> SensorContextHolder: Request context
+    activate SensorContextHolder
+    SensorContextHolder ->> CustomCompilerPlugin: Send context set in static attribute
+    deactivate SensorContextHolder
+    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
     deactivate CustomCompilerPlugin
-    deactivate BridgeTool
+    BridgeTool (in Distribution) ->> SensorContextHolder: Request context
+    activate SensorContextHolder
+    SensorContextHolder ->> BridgeTool (in Distribution): Send context set in static attribute
+    deactivate SensorContextHolder
+    BridgeTool (in Distribution) ->> BridgeTool (in Distribution): Add external issues to issues array
+    deactivate BridgeTool (in Distribution)
 ```
 
 # Ballerina Tool extension methods
