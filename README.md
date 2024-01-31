@@ -2,18 +2,18 @@
 
 ```mermaid
 sequenceDiagram
-    participant BridgeTool
-    participant CustomCompilerPlugin
-    activate BridgeTool
-    BridgeTool ->> BridgeTool: Perform internal scans
-    BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
-    activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Report issues as diagnostics
-    CustomCompilerPlugin ->> BridgeTool: Get diagnostics
-    deactivate CustomCompilerPlugin
-    BridgeTool ->> BridgeTool: Filter Issue diagnostics
-    BridgeTool ->> BridgeTool: Add Filtered issues to all issues array
-    deactivate BridgeTool
+    participant Bridge Tool
+    participant MyScannerPlugin extends CompilerPlugin
+    activate Bridge Tool
+    Bridge Tool ->> Bridge Tool: Perform core scans
+    Bridge Tool ->> MyScannerPlugin extends CompilerPlugin: Engage through package compilation
+    activate MyScannerPlugin extends CompilerPlugin
+    MyScannerPlugin extends CompilerPlugin ->> MyScannerPlugin extends CompilerPlugin: Report issues as diagnostics
+    MyScannerPlugin extends CompilerPlugin ->> Bridge Tool: Get diagnostics
+    deactivate MyScannerPlugin extends CompilerPlugin
+    Bridge Tool ->> Bridge Tool: Filter Issue diagnostics
+    Bridge Tool ->> Bridge Tool: Add Filtered issues to all issues array
+    deactivate Bridge Tool
 ```
 
 # Ballerina Tool extension methods

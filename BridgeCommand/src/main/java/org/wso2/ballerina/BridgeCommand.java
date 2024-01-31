@@ -9,7 +9,6 @@ import io.ballerina.compiler.syntax.tree.SyntaxTree;
 import io.ballerina.projects.Document;
 import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleCompilation;
-import io.ballerina.projects.PackageCompilation;
 import io.ballerina.projects.Project;
 import io.ballerina.projects.directory.ProjectLoader;
 import io.ballerina.projects.util.ProjectConstants;
@@ -19,7 +18,6 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -129,77 +127,53 @@ public class BridgeCommand implements BLauncherCmd {
                 String documentName = document.name();
 
                 // Initialize the reporter
-                SensorContext context = new SensorContext(issues,
-                        documentPath != null ? documentPath.toString() : null,
-                        moduleName,
-                        documentName);
+                ScannerContextImpl context = new ScannerContextImpl(issues,
+                        document,
+                        module,
+                        project);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
-                context.reportIssue(0,
+                context.getReporter().reportIssue(0,
                         0,
                         0,
                         0,
                         "S107",
                         "Local issue",
-                        "INTERNAL_CHECK_VIOLATION");
+                        "INTERNAL_CHECK_VIOLATION",
+                        context.getCurrentDocument(),
+                        context.getCurrentModule(),
+                        context.getCurrentProject());
 
-                // Perform custom scans
-                if (module.isDefaultModule()) {
-                    PackageCompilation packageCompilation = project.currentPackage().getCompilation();
+                // Iterate through received diagnostics and add reported issues
+                project.currentPackage().getCompilation().diagnosticResult().diagnostics().forEach(diagnostic -> {
+                    // Filter through the diagnostics
+                    String issueType = diagnostic.diagnosticInfo().code();
+                    if (issueType.equals("SCAN_TOOL_DIAGNOSTICS")) {
+                        List<DiagnosticProperty<?>> properties = diagnostic.properties();
 
-                    // Iterate through received diagnostics and add reported issues
-                    packageCompilation.diagnosticResult().diagnostics().forEach(diagnostic -> {
-                        // Filter through the diagnostics
-                        String issueType = diagnostic.diagnosticInfo().code();
-                        if (issueType.equals("SCAN_TOOL_DIAGNOSTICS")) {
-                            List<DiagnosticProperty<?>> properties = diagnostic.properties();
+                        properties.forEach(diagnosticProperty -> {
+                            // Validating the type of object received from the diagnostic
+                            if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.STRING)) {
+                                String reportedFilePath = (String) diagnosticProperty.value();
 
-                            properties.forEach(diagnosticProperty -> {
-                                // Validating the type of object received from the diagnostic
-                                if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.OTHER)) {
-                                    Object diagnosticIssue = diagnosticProperty.value();
+                                // Create a new issue from information from diagnostics
+                                Issue externalIssue = new Issue(
+                                        diagnostic.location().lineRange().startLine().line(),
+                                        diagnostic.location().lineRange().startLine().offset(),
+                                        diagnostic.location().lineRange().endLine().line(),
+                                        diagnostic.location().lineRange().endLine().offset(),
+                                        "S1001", // TODO: Generated internally
+                                        diagnostic.diagnosticInfo().messageFormat(),
+                                        "CUSTOM_CHECK_VIOLATION", // TODO: Label generated internally
+                                        diagnostic.location().lineRange().fileName(),
+                                        reportedFilePath
+                                );
 
-                                    // Creating a new issue through reflection API
-                                    try {
-                                        Issue externalIssue = new Issue(
-                                                (Integer) diagnosticIssue.getClass()
-                                                        .getMethod("getStartLine")
-                                                        .invoke(diagnosticIssue),
-                                                (Integer) diagnosticIssue.getClass()
-                                                        .getMethod("getStartLineOffset")
-                                                        .invoke(diagnosticIssue),
-                                                (Integer) diagnosticIssue.getClass()
-                                                        .getMethod("getEndLine")
-                                                        .invoke(diagnosticIssue),
-                                                (Integer) diagnosticIssue.getClass()
-                                                        .getMethod("getEndLineOffset")
-                                                        .invoke(diagnosticIssue),
-                                                (String) diagnosticIssue.getClass()
-                                                        .getMethod("getRuleID")
-                                                        .invoke(diagnosticIssue),
-                                                (String) diagnosticIssue.getClass()
-                                                        .getMethod("getMessage")
-                                                        .invoke(diagnosticIssue),
-                                                (String) diagnosticIssue.getClass()
-                                                        .getMethod("getIssueType")
-                                                        .invoke(diagnosticIssue),
-                                                (String) diagnosticIssue.getClass()
-                                                        .getMethod("getFileName")
-                                                        .invoke(diagnosticIssue),
-                                                (String) diagnosticIssue.getClass()
-                                                        .getMethod("getReportedFilePath")
-                                                        .invoke(diagnosticIssue)
-                                        );
-
-                                        issues.add(externalIssue);
-                                    } catch (IllegalAccessException | InvocationTargetException |
-                                             NoSuchMethodException ignored) {
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
+                                issues.add(externalIssue);
+                            }
+                        });
+                    }
+                });
             });
         });
 

@@ -60,9 +60,6 @@ dependencies {
 
     // Required for determining the platform a java process is running on
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
-
-    // Adding dependency to the bal scan tool to retrieve the interface methods
-    implementation project(path: ':BridgeCommand')
 }
 
 // Setting up the ballerina home property for the project
