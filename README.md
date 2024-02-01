@@ -2,29 +2,22 @@
 
 ```mermaid
 sequenceDiagram
-    participant BridgeTool
-    participant SensorContextFactory
-    participant CustomCompilerPlugin
-    activate BridgeTool
-    BridgeTool ->> BridgeTool: Perform internal scans
-    BridgeTool ->> SensorContextFactory: Pass sensor context, serializes and saves to file
-    activate SensorContextFactory
-    deactivate SensorContextFactory
-    BridgeTool ->> CustomCompilerPlugin: Engage through package compilation
-    activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> SensorContextFactory: Request reporter
-    activate SensorContextFactory
-    SensorContextFactory ->> CustomCompilerPlugin: Get context from file, deserializes and sends reporter
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
-    CustomCompilerPlugin ->> SensorContextFactory: Pass sensor context, serializes and saves to file
-    deactivate SensorContextFactory
-    deactivate CustomCompilerPlugin
-    BridgeTool ->> SensorContextFactory: Request external issues
-    activate SensorContextFactory
-    SensorContextFactory ->> BridgeTool: Get context from file, deserializes and sends external issues
-    deactivate SensorContextFactory
-    BridgeTool ->> BridgeTool: Add external issues to issues array
-    deactivate BridgeTool
+    participant Bridge Tool
+    participant MyScannerPlugin extends ScannerCompilerPlugin
+    activate Bridge Tool
+    Bridge Tool ->> Bridge Tool: Perform core scan
+    Bridge Tool ->> MyScannerPlugin extends ScannerCompilerPlugin: Engage through package compilation
+    activate MyScannerPlugin extends ScannerCompilerPlugin
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Create ScannerContext, <br> perform scans and report issues via <br> the Reporter of it
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Serialize ScannerContext and <br> save to file
+    deactivate MyScannerPlugin extends ScannerCompilerPlugin
+    Bridge Tool ->> MyScannerPlugin extends ScannerCompilerPlugin: Request deserialized ScannerContext
+    activate MyScannerPlugin extends ScannerCompilerPlugin
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Retrieve serialized ScannerContext <br> from file and de-serializes it
+    MyScannerPlugin extends ScannerCompilerPlugin ->> Bridge Tool: Send de-serialized ScannerContext
+    deactivate MyScannerPlugin extends ScannerCompilerPlugin
+    Bridge Tool ->> Bridge Tool: Add external issues from reporter of <br> ScannerContext to issues array
+    deactivate Bridge Tool
 ```
 
 # Ballerina Tool extension methods

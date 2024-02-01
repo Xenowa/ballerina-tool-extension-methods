@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @CommandLine.Command(name = "bridge", description = "Link with compiler plugins")
 public class BridgeCommand implements BLauncherCmd {
@@ -95,7 +94,7 @@ public class BridgeCommand implements BLauncherCmd {
         Project project = ProjectLoader.loadProject(Path.of(userPath));
 
         // Array to hold all issues
-        AtomicReference<ArrayList<Issue>> issues = new AtomicReference<>(new ArrayList<>());
+        ArrayList<Issue> issues = new ArrayList<>();
 
         // Iterate through each module of the project
         project.currentPackage().moduleIds().forEach(moduleId -> {
@@ -116,56 +115,40 @@ public class BridgeCommand implements BLauncherCmd {
                 // Retrieve the semantic model from the ballerina document compilation
                 SemanticModel semanticModel = compilation.getSemanticModel();
 
-                // Retrieve the current document path
-                Path documentPath = project.documentPath(documentId).orElse(null);
-
-                // Retrieve the current module name
-                String moduleName = module.moduleName().toString();
-
-                // Retrieve the current document name
-                String documentName = document.name();
-
-                // Initialize the reporter
-                SensorContext context = new SensorContext(issues.get(),
-                        documentPath != null ? documentPath.toString() : null,
-                        moduleName,
-                        documentName);
+                // Initialize the context
+                LocalScannerContext context = new LocalScannerContext(issues,
+                        document,
+                        module,
+                        project);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
-                Reporter reporter = context.getReporter();
-                reporter.reportIssue(0,
+                context.getReporter().reportIssue(0,
                         0,
                         0,
                         0,
                         "S107",
                         "Local issue",
-                        "INTERNAL_CHECK_VIOLATION");
-
-                if (module.isDefaultModule()) {
-                    SensorContextHolder.saveSerializedContext(context);
-
-                    // Engage custom compiler plugins through package compilation
-                    project.currentPackage().getCompilation();
-
-                    // Retrieve the internal issues array
-                    ArrayList<Issue> internalIssues = issues.get();
-
-                    // Add external issues to the internal issues array
-                    boolean externalIssuesAdded = internalIssues.addAll(
-                            SensorContextHolder.getDeserializedContext()
-                                    .getReporter()
-                                    .getExternalIssues());
-
-                    if (externalIssuesAdded) {
-                        issues.set(internalIssues);
-                    }
-                }
+                        "INTERNAL_CHECK_VIOLATION",
+                        context.getCurrentDocument(),
+                        context.getCurrentModule(),
+                        context.getCurrentProject());
             });
+            
+            if (module.isDefaultModule()) {
+                // Engage custom compiler plugins through package compilation
+                project.currentPackage().getCompilation();
+
+                // Add external issues to the internal issues array
+                ScannerContext externalScannerContext = ScannerCompilerPlugin.getDeserializedContext();
+                if (externalScannerContext != null) {
+                    issues.addAll(externalScannerContext.getReporter().getExternalIssues());
+                }
+            }
         });
 
         // output scanned results to console
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonArray issuesAsJson = gson.toJsonTree(issues.get()).getAsJsonArray();
+        JsonArray issuesAsJson = gson.toJsonTree(issues).getAsJsonArray();
         outputStream.println(gson.toJson(issuesAsJson));
     }
 

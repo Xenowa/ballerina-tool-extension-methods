@@ -9,37 +9,44 @@ import java.util.ArrayList;
 
 public class Reporter {
     // Internal attributes
-    private final String filName;
-    private final String issuesFilePath;
     private final ArrayList<Issue> issues;
     // External attributes
     private final ArrayList<Issue> externalIssues = new ArrayList<>();
 
     // Internal methods
-    public Reporter(String filName, ArrayList<Issue> issues, String issuesFilePath) {
-        this.filName = filName;
+    public Reporter(ArrayList<Issue> issues) {
         this.issues = issues;
-        this.issuesFilePath = issuesFilePath;
     }
 
+    // Internal methods
     void reportIssue(int startLine,
                      int startLineOffset,
                      int endLine,
                      int endLineOffset,
                      String ruleID,
                      String message,
-                     String issueType) {
-        Issue issue = new Issue(startLine,
-                startLineOffset,
-                endLine,
-                endLineOffset,
-                ruleID,
-                message,
-                issueType,
-                filName,
-                issuesFilePath);
+                     String issueType,
+                     Document reportedDocument,
+                     Module reportedModule,
+                     Project reportedProject) {
 
-        issues.add(issue);
+        String moduleName = reportedModule.moduleName().toString();
+        String documentName = reportedDocument.name();
+        Path issuesFilePath = reportedProject.documentPath(reportedDocument.documentId()).orElse(null);
+
+        if (issuesFilePath != null) {
+            Issue issue = new Issue(startLine,
+                    startLineOffset,
+                    endLine,
+                    endLineOffset,
+                    ruleID,
+                    message,
+                    issueType,
+                    moduleName + "/" + documentName,
+                    issuesFilePath.toString());
+
+            issues.add(issue);
+        }
     }
 
     // External methods
