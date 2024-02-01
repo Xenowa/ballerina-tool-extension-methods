@@ -8,19 +8,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class Reporter {
-    // Internal Attributes
-    private final String filName;
-    private final String issuesFilePath;
-
-    // Common attribute shared between internal and external reporter
     private final ArrayList<Issue> issues;
     private final ArrayList<Issue> externalIssues = new ArrayList<>();
 
     // Internal methods
-    public Reporter(String filName, ArrayList<Issue> issues, String issuesFilePath) {
-        this.filName = filName;
+    public Reporter(ArrayList<Issue> issues) {
         this.issues = issues;
-        this.issuesFilePath = issuesFilePath;
     }
 
     ArrayList<Issue> getExternalIssues() {
@@ -33,18 +26,28 @@ public class Reporter {
                      int endLineOffset,
                      String ruleID,
                      String message,
-                     String issueType) {
-        Issue issue = new Issue(startLine,
-                startLineOffset,
-                endLine,
-                endLineOffset,
-                ruleID,
-                message,
-                issueType,
-                filName,
-                issuesFilePath);
+                     String issueType,
+                     Document reportedDocument,
+                     Module reportedModule,
+                     Project reportedProject) {
 
-        issues.add(issue);
+        String moduleName = reportedModule.moduleName().toString();
+        String documentName = reportedDocument.name();
+        Path issuesFilePath = reportedProject.documentPath(reportedDocument.documentId()).orElse(null);
+
+        if (issuesFilePath != null) {
+            Issue issue = new Issue(startLine,
+                    startLineOffset,
+                    endLine,
+                    endLineOffset,
+                    ruleID,
+                    message,
+                    issueType,
+                    moduleName + "/" + documentName,
+                    issuesFilePath.toString());
+
+            issues.add(issue);
+        }
     }
 
     // External methods (Synchronized, since multiple compiler plugins can be using this)

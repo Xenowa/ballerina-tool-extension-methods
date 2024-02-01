@@ -2,27 +2,20 @@
 
 ```mermaid
 sequenceDiagram
-    participant BridgeTool (in Distribution)
-    participant SensorContextHolder
-    participant CustomCompilerPlugin
-    BridgeTool (in Distribution) ->> SensorContextHolder: Save context as static attribute
-    activate BridgeTool (in Distribution)
-    activate SensorContextHolder
-    deactivate SensorContextHolder
-    BridgeTool (in Distribution) ->> CustomCompilerPlugin: Engage through package compilation
-    activate CustomCompilerPlugin
-    CustomCompilerPlugin ->> SensorContextHolder: Request context
-    activate SensorContextHolder
-    SensorContextHolder ->> CustomCompilerPlugin: Send context set in static attribute
-    deactivate SensorContextHolder
-    CustomCompilerPlugin ->> CustomCompilerPlugin: Perform external scans
-    deactivate CustomCompilerPlugin
-    BridgeTool (in Distribution) ->> SensorContextHolder: Request context
-    activate SensorContextHolder
-    SensorContextHolder ->> BridgeTool (in Distribution): Send context set in static attribute
-    deactivate SensorContextHolder
-    BridgeTool (in Distribution) ->> BridgeTool (in Distribution): Add external issues to issues array
-    deactivate BridgeTool (in Distribution)
+    participant Bridge Tool (in Distribution)
+    participant MyScannerPlugin extends ScannerCompilerPlugin
+    activate Bridge Tool (in Distribution)
+    Bridge Tool (in Distribution) ->> Bridge Tool (in Distribution): Perform core scan
+    Bridge Tool (in Distribution) ->> MyScannerPlugin extends ScannerCompilerPlugin: Engage through package compilation
+    activate MyScannerPlugin extends ScannerCompilerPlugin
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Create static ScannerContext, <br> perform scans and report issues <br> via the Reporter of it
+    deactivate MyScannerPlugin extends ScannerCompilerPlugin
+    Bridge Tool (in Distribution) ->> MyScannerPlugin extends ScannerCompilerPlugin: Request ScannerContext
+    activate MyScannerPlugin extends ScannerCompilerPlugin
+    MyScannerPlugin extends ScannerCompilerPlugin ->> Bridge Tool (in Distribution): Send static ScannerContext
+    deactivate MyScannerPlugin extends ScannerCompilerPlugin
+    Bridge Tool (in Distribution) ->> Bridge Tool (in Distribution): Add external issues from reporter of <br> ScannerContext to issues array
+    deactivate Bridge Tool (in Distribution)
 ```
 
 # Ballerina Tool extension methods

@@ -125,10 +125,10 @@ public class BridgeCommand implements BLauncherCmd {
                 String documentName = document.name();
 
                 // Initialize the reporter
-                SensorContext context = new SensorContext(issues,
-                        documentPath != null ? documentPath.toString() : null,
-                        moduleName,
-                        documentName);
+                ScannerContextImpl context = new ScannerContextImpl(issues,
+                        document,
+                        module,
+                        project);
 
                 // Simulating performing a local analysis by reporting a local issue for each document
                 context.getReporter().reportIssue(0,
@@ -137,17 +137,19 @@ public class BridgeCommand implements BLauncherCmd {
                         0,
                         "S107",
                         "Local issue",
-                        "INTERNAL_CHECK_VIOLATION");
+                        "INTERNAL_CHECK_VIOLATION",
+                        context.getCurrentDocument(),
+                        context.getCurrentModule(),
+                        context.getCurrentProject());
 
                 if (module.isDefaultModule()) {
-                    // Set the local context to the context holder (App Class Loader)
-                    SensorContextHolder.setContext(context);
-
                     // Engage custom compiler plugins through package compilation
                     project.currentPackage().getCompilation();
 
-                    // Save all external issues to issues array
-                    issues.addAll(context.getReporter().getExternalIssues());
+                    ScannerCompilerPlugin.getExternalScannerContext().forEach(externalScannerContext -> {
+                        // Save all external issues to issues array
+                        issues.addAll(externalScannerContext.getReporter().getExternalIssues());
+                    });
                 }
             });
         });
