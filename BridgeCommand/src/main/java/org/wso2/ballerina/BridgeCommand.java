@@ -116,7 +116,7 @@ public class BridgeCommand implements BLauncherCmd {
                 SemanticModel semanticModel = compilation.getSemanticModel();
 
                 // Initialize the context
-                LocalScannerContext context = new LocalScannerContext(issues,
+                ScannerContext context = new ScannerContext(issues,
                         document,
                         module,
                         project);
@@ -133,15 +133,15 @@ public class BridgeCommand implements BLauncherCmd {
                         context.getCurrentModule(),
                         context.getCurrentProject());
             });
-            
+
             if (module.isDefaultModule()) {
                 // Engage custom compiler plugins through package compilation
                 project.currentPackage().getCompilation();
 
                 // Add external issues to the internal issues array
-                ScannerContext externalScannerContext = ScannerCompilerPlugin.getDeserializedContext();
-                if (externalScannerContext != null) {
-                    issues.addAll(externalScannerContext.getReporter().getExternalIssues());
+                ArrayList<Issue> externalIssues = ScannerCompilerPlugin.getExternalIssues();
+                if (externalIssues != null) {
+                    issues.addAll(externalIssues);
                 }
             }
         });

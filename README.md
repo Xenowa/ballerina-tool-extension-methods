@@ -9,14 +9,14 @@ sequenceDiagram
     Bridge Tool ->> MyScannerPlugin extends ScannerCompilerPlugin: Engage through package compilation
     activate MyScannerPlugin extends ScannerCompilerPlugin
     MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Create ScannerContext, <br> perform scans and report issues via <br> the Reporter of it
-    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Serialize ScannerContext and <br> save to file
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Serialize reported issues and save to file
     deactivate MyScannerPlugin extends ScannerCompilerPlugin
-    Bridge Tool ->> MyScannerPlugin extends ScannerCompilerPlugin: Request deserialized ScannerContext
+    Bridge Tool ->> MyScannerPlugin extends ScannerCompilerPlugin: Request deserialized issues
     activate MyScannerPlugin extends ScannerCompilerPlugin
-    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Retrieve serialized ScannerContext <br> from file and de-serializes it
-    MyScannerPlugin extends ScannerCompilerPlugin ->> Bridge Tool: Send de-serialized ScannerContext
+    MyScannerPlugin extends ScannerCompilerPlugin ->> MyScannerPlugin extends ScannerCompilerPlugin: Retrieve serialized issues <br> from file and de-serializes them
+    MyScannerPlugin extends ScannerCompilerPlugin ->> Bridge Tool: Send de-serialized issues
     deactivate MyScannerPlugin extends ScannerCompilerPlugin
-    Bridge Tool ->> Bridge Tool: Add external issues from reporter of <br> ScannerContext to issues array
+    Bridge Tool ->> Bridge Tool: Add issues to issues array
     deactivate Bridge Tool
 ```
 

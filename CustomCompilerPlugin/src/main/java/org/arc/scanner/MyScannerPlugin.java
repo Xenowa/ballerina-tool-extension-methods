@@ -41,7 +41,7 @@ public class MyScannerPlugin extends ScannerCompilerPlugin {
                                 module,
                                 project);
                     }
-                    saveScannerContext(compilerPluginContext);
+                    saveExternalIssues(compilerPluginContext);
                 }, SyntaxKind.FUNCTION_BODY_BLOCK);
             }
         });

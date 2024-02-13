@@ -1,6 +1,7 @@
 package org.wso2.ballerina;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import io.ballerina.projects.plugins.CompilerPlugin;
@@ -11,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,22 +22,26 @@ import java.util.Map;
 public abstract class ScannerCompilerPlugin extends CompilerPlugin {
     private static final String serializeContextFile = "serialized-context-out.json";
     private static final Gson gson = new Gson();
+    // For serializing and deserializing Arraylists
+    private static final Type listOfIssuesType = new TypeToken<ArrayList<Issue>>() {
+    }.getType();
     private final Map<CompilerPluginContext, ScannerContext> scannerContexts = new HashMap<>();
 
     // Retrieve the deserialized context from file
-    static ScannerContext getDeserializedContext() {
+    static ArrayList<Issue> getExternalIssues() {
         Path serializedContextFilePath = Path.of(serializeContextFile);
         if (Files.exists(serializedContextFilePath)) {
             try {
                 Reader fileReader = new FileReader(serializeContextFile);
                 JsonReader reader = new JsonReader(fileReader);
-                ScannerContext deserializedContext = gson.fromJson(reader, ScannerContext.class);
+                ArrayList<Issue> externalIssues = gson.fromJson(reader, listOfIssuesType);
+                // ScannerContext deserializedContext = gson.fromJson(reader, ScannerContext.class);
                 reader.close();
 
                 // delete the file after getting the context
                 Files.delete(serializedContextFilePath);
 
-                return deserializedContext;
+                return externalIssues;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -56,30 +62,29 @@ public abstract class ScannerCompilerPlugin extends CompilerPlugin {
         return scannerContext;
     }
 
-    // Save the serialized context to file
-    public synchronized void saveScannerContext(CompilerPluginContext compilerPluginContext) {
+    // Save the issues in a serialized format to file
+    public synchronized void saveExternalIssues(CompilerPluginContext compilerPluginContext) {
         ScannerContext scannerContext = getScannerContext(compilerPluginContext);
 
         try {
             Writer fileWriter = new FileWriter(serializeContextFile);
             JsonWriter writer = new JsonWriter(fileWriter);
             if (!Files.exists(Path.of(serializeContextFile))) {
-                // Check if file already exists if not create one and save the serialized context directly
-                gson.toJson(scannerContext, ScannerContext.class, writer);
+                // Check if file already exists if not create one and save the Analysis issues directly
+                gson.toJson(scannerContext.getReporter().getIssues(), listOfIssuesType, writer);
             } else {
                 // Read the context from file
                 Reader fileReader = new FileReader(serializeContextFile);
                 JsonReader reader = new JsonReader(fileReader);
-                ScannerContext fileScannerContext = gson.fromJson(reader, ScannerContext.class);
+                ArrayList<Issue> deserializedExternalIssues = gson.fromJson(reader, listOfIssuesType);
                 reader.close();
 
-                if (fileScannerContext == null) {
-                    gson.toJson(scannerContext, ScannerContext.class, writer);
+                if (deserializedExternalIssues == null) {
+                    gson.toJson(scannerContext.getReporter().getIssues(), listOfIssuesType, writer);
                 } else {
-                    // Save the issues from in memory context to the file context
-                    fileScannerContext.getReporter().addExternalIssues(scannerContext.getReporter().getExternalIssues());
-                    // Save the file context
-                    gson.toJson(fileScannerContext, ScannerContext.class, writer);
+                    // Save the issues from in memory context to the file
+                    deserializedExternalIssues.addAll(scannerContext.getReporter().getIssues());
+                    gson.toJson(deserializedExternalIssues, listOfIssuesType, writer);
                 }
             }
             writer.close();

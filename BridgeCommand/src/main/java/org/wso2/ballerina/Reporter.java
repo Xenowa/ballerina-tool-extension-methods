@@ -10,15 +10,21 @@ import java.util.ArrayList;
 public class Reporter {
     // Internal attributes
     private final ArrayList<Issue> issues;
-    // External attributes
-    private final ArrayList<Issue> externalIssues = new ArrayList<>();
 
     // Internal methods
     public Reporter(ArrayList<Issue> issues) {
         this.issues = issues;
     }
 
-    // Internal methods
+    ArrayList<Issue> getIssues() {
+        return issues;
+    }
+
+    // TODO: to be removed once serializing only list of issues is implemented
+    void addIssues(ArrayList<Issue> issues) {
+        issues.addAll(issues);
+    }
+
     void reportIssue(int startLine,
                      int startLineOffset,
                      int endLine,
@@ -42,20 +48,11 @@ public class Reporter {
                     ruleID,
                     message,
                     issueType,
-                    moduleName + "/" + documentName,
+                    moduleName + "/" + documentName, // TODO: Attribute should be enabled for future scans
                     issuesFilePath.toString());
 
             issues.add(issue);
         }
-    }
-
-    // External methods
-    ArrayList<Issue> getExternalIssues() {
-        return externalIssues;
-    }
-
-    void addExternalIssues(ArrayList<Issue> issues) {
-        externalIssues.addAll(issues);
     }
 
     public void reportExternalIssue(int startLine,
@@ -70,18 +67,18 @@ public class Reporter {
         String documentName = reportedDocument.name();
         Path externalIssuesFilePath = reportedProject.documentPath(reportedDocument.documentId()).orElse(null);
 
-        if (externalIssuesFilePath != null) {
+        if (externalIssuesFilePath != null && message != null) {
             Issue issue = new Issue(startLine,
                     startLineOffset,
                     endLine,
                     endLineOffset,
-                    "S1001", // TODO: Generated internally
+                    "S1001",
                     message,
                     "CUSTOM_CHECK_VIOLATION", // TODO: Labelled internally
-                    moduleName + "/" + documentName,
+                    moduleName + "/" + documentName, // TODO: Attribute should be enabled for future scans
                     externalIssuesFilePath.toString());
 
-            externalIssues.add(issue);
+            issues.add(issue);
         }
     }
 }
