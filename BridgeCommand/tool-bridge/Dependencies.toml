@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.8.4-SNAPSHOT"
+distribution-version = "2201.8.5"
 
 [[package]]
 org = "ballerina"
@@ -41,6 +41,18 @@ dependencies = [
 ]
 
 [[package]]
+org = "ballerina"
+name = "tool_bridge"
+version = "0.1.0"
+dependencies = [
+	{org = "ballerina", name = "io"},
+	{org = "ballerinai", name = "observe"}
+]
+modules = [
+	{org = "ballerina", packageName = "tool_bridge", moduleName = "tool_bridge"}
+]
+
+[[package]]
 org = "ballerinai"
 name = "observe"
 version = "0.0.0"
@@ -50,17 +62,5 @@ dependencies = [
 ]
 modules = [
 	{org = "ballerinai", packageName = "observe", moduleName = "observe"}
-]
-
-[[package]]
-org = "tharana_wanigaratne"
-name = "tool_bridge"
-version = "0.1.0"
-dependencies = [
-	{org = "ballerina", name = "io"},
-	{org = "ballerinai", name = "observe"}
-]
-modules = [
-	{org = "tharana_wanigaratne", packageName = "tool_bridge", moduleName = "tool_bridge"}
 ]
 

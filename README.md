@@ -50,15 +50,15 @@ public function main(){
 The following software should be installed locally
 
 - [Java version: 17](https://adoptium.net/temurin/releases/?version=17)
-- [Ballerina version: 2201.8.4](https://ballerina.io/downloads/archived/#swan-lake-archived-versions)
+- [Ballerina version: 2201.8.5](https://ballerina.io/downloads/archived/#swan-lake-archived-versions)
 
 ## Getting started
 
 1. Create the custom compiler plugin by following the
-   instructions [here](https://github.com/Xenowa/ballerina-tool-extension-methods/tree/tool-plugin-based-approach/CustomCompilerPlugin)
+   instructions [here](https://github.com/Xenowa/ballerina-tool-extension-methods/tree/compiler-diagnostics-based-approach/CustomCompilerPlugin)
 
 2. Create the bal bridge tool by following the
-   instructions [here](https://github.com/Xenowa/ballerina-tool-extension-methods/tree/tool-plugin-based-approach/BridgeCommand)
+   instructions [here](https://github.com/Xenowa/ballerina-tool-extension-methods/tree/compiler-diagnostics-based-approach/BridgeCommand)
 
 3. Navigate to the test-bridge-command directory
 

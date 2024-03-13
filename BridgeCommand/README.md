@@ -10,88 +10,52 @@
 
 1. First a ballerina project should be opened
 
-2. Next run the following command in the console:
+2. The compiler plugin should be provided as an import to the ballerina file
+
+```bal
+import tharana_wanigaratne/custom_compiler_plugin as _;
+
+public function main(){
+}
+```
+
+3. Next run the following command in the console:
 
 ```cmd
 bal bridge
 ```
 
-3. If successful, then will produce a console output
+4. If successful, then will produce a console output
+
+## Building from the source
+Execute the commands below to build from the source.
+
+1. Export Github Personal access token with read package permissions as follows,
+    ```bash
+    export packageUser=<Username>
+    export packagePAT=<Personal access token>
+    ```
+2. To build the packages:
+    ```bash
+    ./gradlew clean build
+    ```
+   > **Note**: The bridge tool configurations will be appended to the contents of the `.ballerina/.config/bal-tools.toml` file during the build process.
 
 ## Features
 
-- Pass a context from the tool to a compiler plugin
+- Pass a context from the Compiler plugin to a Ballerina tool
 
-## Usage (Local)
-1. Replace the `jarURL` [here](https://github.com/Xenowa/ballerina-tool-plugin-bridge/blob/thin-jar-service-loading/BridgeCommand/src/main/java/org/wso2/ballerina/BridgeCommand.java#L128)
-   with the absolute path to the compiler plugin
+## Usage
+1. Navigate to test-bridge-command Ballerina project
+    ```bash
+    cd test-bridge-command
+    ```
+2. Check if the `bridge` command is added by running
+    ```bash
+    bal tool list
+    ```
 
-2. Run and build jar file
-
-```cmd
-gradlew clean build -p BridgeCommand
-```
-
-3. Navigate to the tool-bridge directory
-
-```cmd
-cd tool-bridge
-```
-
-4. Generate a bala file
-
-```cmd
-bal pack
-```
-
-5. Push the bala file to local repository
-
-```cmd
-bal push --repository=local
-```
-
-6. Move the tool_bridge to the central.ballerina.io, bala folder
-
-```
-📦<USER_HOME>/.ballerina/repositories/central.ballerina.io
- ┗ 📦bala
-    ┗📦tharana_wanigaratne
-      ┗**📦tool_bridge**
-📦local
-```
-
-7. modify the .config folders following files
-
-```
-📦<USER_HOME>/.ballerina
- ┗ 📦.config
-    ┗**📜bal-tools.toml**
-    ┗**📜dist-2201.8.2.toml**
-```
-
-8. Include the tool details in them as follows
-
-```
-# (bal-tools.toml)
-[[tool]]
-id = "bridge"
-org = "tharana_wanigaratne"
-name = "tool_bridge"
-```
-
-```
-# (dist-2201.8.2.toml)
-[[tool]]
-id = "bridge"
-org = "tharana_wanigaratne"
-name = "tool_bridge"
-version = "0.1.0"
-```
-
-9. Check if the tool is added using the cmd
-
-```cmd
-bal tool list
-```
-
-10. Try out the tool
+3. Check if bridge command executes and returns results
+    ```bash
+    bal bridge
+    ```

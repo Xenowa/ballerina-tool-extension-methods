@@ -11,8 +11,10 @@ import io.ballerina.tools.diagnostics.DiagnosticInfo;
 import io.ballerina.tools.diagnostics.DiagnosticProperty;
 import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
+import org.wso2.ballerina.Issue;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 import org.wso2.ballerinalang.compiler.diagnostic.properties.BStringProperty;
+import org.wso2.ballerinalang.compiler.diagnostic.properties.NonCatProperty;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,6 +38,22 @@ public class CustomTask implements AnalysisTask<SyntaxNodeAnalysisContext> {
             // Retrieve current document name
             String documentName = document.name();
 
+            // Create a new issue
+            Issue issue = new Issue(0,0,0,0,"B1001",
+                    "External Issue","CUSTOM_CHECK_VIOLATION",
+                    moduleName + "/" + documentName,documentPath.toString());
+
+            // Create list to hold additional diagnostics information on the issue
+            List<DiagnosticProperty<?>> diagnosticProperties = new ArrayList<>();
+
+            // Add the issue a non cat property to diagnostics
+            NonCatProperty newIssue = new NonCatProperty(issue);
+            diagnosticProperties.add(newIssue);
+
+            // Create Diagnostics information
+            DiagnosticInfo issueInfo = new DiagnosticInfo("SCAN_TOOL_DIAGNOSTICS",
+                    "Custom compiler plugin issue", DiagnosticSeverity.INTERNAL);
+
             // Retrieve the location of the issue
             Location issueLocation = new BLangDiagnosticLocation(moduleName + "/" + documentName,
                     0,
@@ -43,22 +61,8 @@ public class CustomTask implements AnalysisTask<SyntaxNodeAnalysisContext> {
                     0,
                     0);
 
-            // Create Diagnostics information
-            DiagnosticInfo issueInfo = new DiagnosticInfo(
-                    "SCAN_TOOL_DIAGNOSTICS",
-                    "Custom compiler plugin issue",
-                    DiagnosticSeverity.INTERNAL);
-
-            // Add additional diagnostics properties relevant to the issue
-            List<DiagnosticProperty<?>> diagnosticProperties = new ArrayList<>();
-
-            // Adding the file name as a diagnostic property
-            DiagnosticProperty<String> filePath = new BStringProperty(documentPath.toString());
-            diagnosticProperties.add(filePath);
-
             // Create a new diagnostic
-            Diagnostic diagnosticIssue = DiagnosticFactory.createDiagnostic(issueInfo,
-                    issueLocation,
+            Diagnostic diagnosticIssue = DiagnosticFactory.createDiagnostic(issueInfo, issueLocation,
                     diagnosticProperties, issueInfo);
 
             // Report the diagnostic

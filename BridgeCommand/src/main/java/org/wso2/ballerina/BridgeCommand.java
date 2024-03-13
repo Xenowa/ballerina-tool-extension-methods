@@ -152,23 +152,12 @@ public class BridgeCommand implements BLauncherCmd {
                         List<DiagnosticProperty<?>> properties = diagnostic.properties();
 
                         properties.forEach(diagnosticProperty -> {
-                            // Validating the type of object received from the diagnostic
-                            if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.STRING)) {
-                                String reportedFilePath = (String) diagnosticProperty.value();
+                            // Validating the type of diagnostic property
+                            if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.OTHER)) {
+                                // Casting the retrieved issue from the diagnostics
+                                Issue externalIssue = (Issue) diagnosticProperty.value();
 
-                                // Create a new issue from information from diagnostics
-                                Issue externalIssue = new Issue(
-                                        diagnostic.location().lineRange().startLine().line(),
-                                        diagnostic.location().lineRange().startLine().offset(),
-                                        diagnostic.location().lineRange().endLine().line(),
-                                        diagnostic.location().lineRange().endLine().offset(),
-                                        "S1001", // TODO: Generated internally
-                                        diagnostic.diagnosticInfo().messageFormat(),
-                                        "CUSTOM_CHECK_VIOLATION", // TODO: Label generated internally
-                                        diagnostic.location().lineRange().fileName(),
-                                        reportedFilePath
-                                );
-
+                                // Adding the retrieved diagnostic from compiler plugin to the tool
                                 issues.add(externalIssue);
                             }
                         });
