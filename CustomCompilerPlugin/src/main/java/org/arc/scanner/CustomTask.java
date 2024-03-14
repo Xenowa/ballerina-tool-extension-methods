@@ -12,6 +12,8 @@ import io.ballerina.tools.diagnostics.DiagnosticProperty;
 import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
 import org.wso2.ballerina.Issue;
+import org.wso2.ballerina.ScannerContext;
+import org.wso2.ballerina.ScannerContextImpl;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 import org.wso2.ballerinalang.compiler.diagnostic.properties.BStringProperty;
 import org.wso2.ballerinalang.compiler.diagnostic.properties.NonCatProperty;
@@ -23,50 +25,24 @@ import java.util.List;
 public class CustomTask implements AnalysisTask<SyntaxNodeAnalysisContext> {
     @Override
     public void perform(SyntaxNodeAnalysisContext context) {
-        // Get access to the current module
+        // Simulating loading this class from compiler plugin side
+        // Get the context from the build context
+        ScannerContext bridgeContext = (ScannerContext) context.currentPackage().project().buildContext()
+                .getData("bridgeContext");
+
+        // Report issues through the context reporter
         Module module = context.currentPackage().module(context.moduleId());
-        // Get access to the current document
         Document document = module.document(context.documentId());
-        // Get access to the current project
-        Project project = module.project();
 
-        // Retrieve current document path
-        Path documentPath = project.documentPath(document.documentId()).orElse(null);
-        if (documentPath != null) {
-            // Retrieve current module name
-            String moduleName = module.moduleName().toString();
-            // Retrieve current document name
-            String documentName = document.name();
-
-            // Create a new issue
-            Issue issue = new Issue(0,0,0,0,"B1001",
-                    "External Issue","CUSTOM_CHECK_VIOLATION",
-                    moduleName + "/" + documentName,documentPath.toString());
-
-            // Create list to hold additional diagnostics information on the issue
-            List<DiagnosticProperty<?>> diagnosticProperties = new ArrayList<>();
-
-            // Add the issue a non cat property to diagnostics
-            NonCatProperty newIssue = new NonCatProperty(issue);
-            diagnosticProperties.add(newIssue);
-
-            // Create Diagnostics information
-            DiagnosticInfo issueInfo = new DiagnosticInfo("SCAN_TOOL_DIAGNOSTICS",
-                    "Custom compiler plugin issue", DiagnosticSeverity.INTERNAL);
-
-            // Retrieve the location of the issue
-            Location issueLocation = new BLangDiagnosticLocation(moduleName + "/" + documentName,
-                    0,
-                    0,
-                    0,
-                    0);
-
-            // Create a new diagnostic
-            Diagnostic diagnosticIssue = DiagnosticFactory.createDiagnostic(issueInfo, issueLocation,
-                    diagnosticProperties, issueInfo);
-
-            // Report the diagnostic
-            context.reportDiagnostic(diagnosticIssue);
-        }
+        bridgeContext.getReporter().reportIssue(0,
+                0,
+                0,
+                0,
+                "C1001",
+                "External issue",
+                "EXTERNAL_CHECK_VIOLATION",
+                document,
+                document.module(),
+                document.module().project());
     }
 }

@@ -144,25 +144,13 @@ public class BridgeCommand implements BLauncherCmd {
                         context.getCurrentModule(),
                         context.getCurrentProject());
 
-                // Iterate through received diagnostics and add reported issues
-                project.currentPackage().getCompilation().diagnosticResult().diagnostics().forEach(diagnostic -> {
-                    // Filter through the diagnostics
-                    String issueType = diagnostic.diagnosticInfo().code();
-                    if (issueType.equals("SCAN_TOOL_DIAGNOSTICS")) {
-                        List<DiagnosticProperty<?>> properties = diagnostic.properties();
+                if (document.module().isDefaultModule() && document.name().equals("main.bal")) {
+                    // Pass bridge context through project API
+                     project.buildContext().putData("bridgeContext", context);
 
-                        properties.forEach(diagnosticProperty -> {
-                            // Validating the type of diagnostic property
-                            if (diagnosticProperty.kind().equals(DiagnosticPropertyKind.OTHER)) {
-                                // Casting the retrieved issue from the diagnostics
-                                Issue externalIssue = (Issue) diagnosticProperty.value();
-
-                                // Adding the retrieved diagnostic from compiler plugin to the tool
-                                issues.add(externalIssue);
-                            }
-                        });
-                    }
-                });
+                    // Perform package compilation to engage plugins
+                    project.currentPackage().getCompilation();
+                }
             });
         });
 

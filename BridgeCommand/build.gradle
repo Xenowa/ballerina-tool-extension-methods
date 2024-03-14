@@ -18,13 +18,13 @@ repositories {
     }
 
     // For Ballerina Plugins
-    maven {
-        url = 'https://maven.pkg.github.com/ballerina-platform/*'
-        credentials {
-            username System.getenv("packageUser")
-            password System.getenv("packagePAT")
-        }
-    }
+//    maven {
+//        url = 'https://maven.pkg.github.com/ballerina-platform/*'
+//        credentials {
+//            username System.getenv("packageUser")
+//            password System.getenv("packagePAT")
+//        }
+//    }
 }
 
 dependencies {

@@ -15,7 +15,7 @@ public class Reporter {
     }
 
     // Internal methods
-    void reportIssue(int startLine,
+    public void reportIssue(int startLine,
                      int startLineOffset,
                      int endLine,
                      int endLineOffset,
