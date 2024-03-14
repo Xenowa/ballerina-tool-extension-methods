@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - compiler-diagnostics-based-approach
+      - data-holder-based-context-sharing
 
 jobs:
   ubuntu_build:
