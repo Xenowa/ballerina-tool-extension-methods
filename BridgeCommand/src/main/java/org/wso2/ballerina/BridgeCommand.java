@@ -6,14 +6,18 @@ import com.google.gson.JsonArray;
 import io.ballerina.cli.BLauncherCmd;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.projects.CompilerPluginCache;
 import io.ballerina.projects.Document;
 import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleCompilation;
+import io.ballerina.projects.Package;
+import io.ballerina.projects.PackageDependencyScope;
+import io.ballerina.projects.PackageManifest;
+import io.ballerina.projects.PackageResolution;
 import io.ballerina.projects.Project;
+import io.ballerina.projects.ResolvedPackageDependency;
 import io.ballerina.projects.directory.ProjectLoader;
 import io.ballerina.projects.util.ProjectConstants;
-import io.ballerina.tools.diagnostics.DiagnosticProperty;
-import io.ballerina.tools.diagnostics.DiagnosticPropertyKind;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -21,7 +25,9 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CommandLine.Command(name = "bridge", description = "Link with compiler plugins")
 public class BridgeCommand implements BLauncherCmd {
@@ -145,11 +151,68 @@ public class BridgeCommand implements BLauncherCmd {
                         context.getCurrentProject());
 
                 if (document.module().isDefaultModule() && document.name().equals("main.bal")) {
-                    // Pass bridge context through project API
-                     project.buildContext().putData("bridgeContext", context);
+                    // Generate the compiler plugin imports to the main.bal file and continue the following operations
+                    // Get more information of the compiler plugins
+                    PackageResolution packageResolution = project.currentPackage().getResolution();
+
+                    // Get the dependencies generated in the main.bal file
+                    ResolvedPackageDependency rootPkgNode = new ResolvedPackageDependency(project.currentPackage(),
+                            PackageDependencyScope.DEFAULT);
+
+                    List<Package> directDependencies = packageResolution.dependencyGraph()
+                            .getDirectDependencies(rootPkgNode)
+                            .stream()
+                            .map(ResolvedPackageDependency::packageInstance)
+                            .toList();
+
+                    List<Rule> externalRules = new ArrayList<>();
+
+                    for (Package pkgDependency : directDependencies) {
+                        PackageManifest pkgManifest = pkgDependency.manifest();
+                        pkgManifest.compilerPluginDescriptor()
+                                .ifPresent(pluginDesc -> {
+                                    // Add the scanner context to all scan tool compiler plugins
+                                    String fqn = pluginDesc.plugin().getClassName();
+                                    Map<String, Object> pluginProperties = new HashMap<>();
+                                    pluginProperties.put("ScannerContext", context);
+
+                                    project.projectEnvironmentContext()
+                                            .getService(CompilerPluginCache.class)
+                                            .putData(fqn, pluginProperties);
+
+//                                    // TODO: Class Load and retrieve the fqn/rules from the compiler plugin
+//                                    try {
+//                                        // Load the class dynamically using a URLClassLoader
+//                                        Class<?> pluginClass = Class.forName(fqn);
+//
+//                                        // Check if the class has a method named "rules"
+//                                        Method rules = pluginClass.getMethod("rules");
+//
+//                                        // Instantiate an object of the plugin class
+//                                        Object pluginInstance = pluginClass.getDeclaredConstructor().newInstance();
+//
+//                                        // Call the "rules" method and store the returned rules
+//                                        List<Rule> pluginRules = (List<Rule>) rules.invoke(pluginInstance);
+//                                        externalRules.addAll(pluginRules);
+//                                    } catch (ClassNotFoundException |
+//                                             NoSuchMethodException |
+//                                             SecurityException |
+//                                             InstantiationException |
+//                                             IllegalAccessException |
+//                                             IllegalArgumentException |
+//                                             InvocationTargetException e) {
+//                                        // Handle any exceptions that might occur during class loading or method invocation
+//                                        System.err.println("Error loading or calling rules() method from compiler plugin: " + fqn);
+//                                        e.printStackTrace();
+//                                    }
+                                });
+                    }
 
                     // Perform package compilation to engage plugins
                     project.currentPackage().getCompilation();
+
+                    // Print all plugin rules
+                    externalRules.forEach(System.out::println);
                 }
             });
         });
