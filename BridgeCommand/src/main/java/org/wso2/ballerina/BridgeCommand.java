@@ -22,6 +22,10 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -180,31 +184,35 @@ public class BridgeCommand implements BLauncherCmd {
                                             .getService(CompilerPluginCache.class)
                                             .putData(fqn, pluginProperties);
 
-//                                    // TODO: Class Load and retrieve the fqn/rules from the compiler plugin
-//                                    try {
-//                                        // Load the class dynamically using a URLClassLoader
-//                                        Class<?> pluginClass = Class.forName(fqn);
-//
-//                                        // Check if the class has a method named "rules"
-//                                        Method rules = pluginClass.getMethod("rules");
-//
-//                                        // Instantiate an object of the plugin class
-//                                        Object pluginInstance = pluginClass.getDeclaredConstructor().newInstance();
-//
-//                                        // Call the "rules" method and store the returned rules
-//                                        List<Rule> pluginRules = (List<Rule>) rules.invoke(pluginInstance);
-//                                        externalRules.addAll(pluginRules);
-//                                    } catch (ClassNotFoundException |
-//                                             NoSuchMethodException |
-//                                             SecurityException |
-//                                             InstantiationException |
-//                                             IllegalAccessException |
-//                                             IllegalArgumentException |
-//                                             InvocationTargetException e) {
-//                                        // Handle any exceptions that might occur during class loading or method invocation
-//                                        System.err.println("Error loading or calling rules() method from compiler plugin: " + fqn);
-//                                        e.printStackTrace();
-//                                    }
+                                    try {
+                                        // Get all the URLs of the imported compiler plugins
+                                        List<String> jarPaths = new ArrayList<>();
+                                        pluginDesc.dependencies().forEach(dependency -> {
+                                            jarPaths.add(dependency.getPath());
+                                        });
+
+
+                                        // Create a URLClassLoader
+                                        URLClassLoader ucl = loadRemoteJARs(jarPaths);
+
+                                        // Load the class dynamically using the UCL
+                                        Class<?> pluginClass = ucl.loadClass(fqn);
+                                        ScannerCompilerPlugin plugin = (ScannerCompilerPlugin) pluginClass
+                                                .getConstructor()
+                                                .newInstance();
+
+                                        externalRules.addAll(plugin.rules());
+                                    } catch (ClassNotFoundException |
+                                             NoSuchMethodException |
+                                             SecurityException |
+                                             InstantiationException |
+                                             IllegalAccessException |
+                                             IllegalArgumentException |
+                                             InvocationTargetException e) {
+                                        // Handle any exceptions that might occur during class loading or method invocation
+                                        System.err.println("Error loading or calling rules() method from compiler plugin: " + fqn);
+                                        e.printStackTrace();
+                                    }
                                 });
                     }
 
@@ -212,7 +220,9 @@ public class BridgeCommand implements BLauncherCmd {
                     project.currentPackage().getCompilation();
 
                     // Print all plugin rules
-                    externalRules.forEach(System.out::println);
+                    externalRules.forEach(rule -> {
+                        System.out.println(rule.getId() + " : " + rule.getDescription());
+                    });
                 }
             });
         });
@@ -221,6 +231,20 @@ public class BridgeCommand implements BLauncherCmd {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonArray issuesAsJson = gson.toJsonTree(issues).getAsJsonArray();
         outputStream.println(gson.toJson(issuesAsJson));
+    }
+
+    public URLClassLoader loadRemoteJARs(List<String> jarPaths) {
+        List<URL> jarURLs = new ArrayList<>();
+        jarPaths.forEach(jarPath -> {
+            Path path = Path.of(jarPath);
+            try {
+                jarURLs.add(path.toUri().toURL());
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return new URLClassLoader(jarURLs.toArray(new URL[]{}), BridgeCommand.class.getClassLoader());
     }
 
     public String checkPath() {

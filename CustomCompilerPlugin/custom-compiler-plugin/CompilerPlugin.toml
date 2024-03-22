@@ -2,4 +2,5 @@
 class = "org.arc.scanner.MyScannerPlugin"
 
 [[dependency]]
+#path = "../build/libs/CustomCompilerPlugin-1.0.jar"
 path = "../build/libs/CustomCompilerPlugin-1.0-all.jar"

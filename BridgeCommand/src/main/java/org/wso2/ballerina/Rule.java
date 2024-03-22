@@ -8,4 +8,12 @@ public class Rule {
         this.id = "C" + id;
         this.description = description;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 }
