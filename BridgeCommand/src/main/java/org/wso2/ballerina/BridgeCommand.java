@@ -13,6 +13,8 @@ import io.ballerina.projects.ModuleCompilation;
 import io.ballerina.projects.Package;
 import io.ballerina.projects.PackageDependencyScope;
 import io.ballerina.projects.PackageManifest;
+import io.ballerina.projects.PackageName;
+import io.ballerina.projects.PackageOrg;
 import io.ballerina.projects.PackageResolution;
 import io.ballerina.projects.Project;
 import io.ballerina.projects.ResolvedPackageDependency;
@@ -173,6 +175,8 @@ public class BridgeCommand implements BLauncherCmd {
 
                     for (Package pkgDependency : directDependencies) {
                         PackageManifest pkgManifest = pkgDependency.manifest();
+                        PackageOrg org = pkgManifest.org();
+                        PackageName name = pkgManifest.name(); //
                         pkgManifest.compilerPluginDescriptor()
                                 .ifPresent(pluginDesc -> {
                                     // Add the scanner context to all scan tool compiler plugins
@@ -196,6 +200,10 @@ public class BridgeCommand implements BLauncherCmd {
                                         URLClassLoader ucl = loadRemoteJARs(jarPaths);
 
                                         // Load the class dynamically using the UCL
+                                        // We need to check
+                                        // We will be reviewing it from PR by PR since having one PR
+                                        // and then pushing changes to that
+                                        // We need to minimize PR times
                                         Class<?> pluginClass = ucl.loadClass(fqn);
                                         ScannerCompilerPlugin plugin = (ScannerCompilerPlugin) pluginClass
                                                 .getConstructor()
